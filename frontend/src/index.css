@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2563eb;
+  --secondary: #0891b2;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Custom utilities */
+.gradient-primary {
+  @apply bg-gradient-to-r from-blue-600 to-cyan-500;
+}
+
+.gradient-secondary {
+  @apply bg-gradient-to-r from-purple-600 to-pink-500;
+}
