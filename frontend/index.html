@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>HMS Demo</title></head>
+<body style="font-family:Arial,Helvetica,sans-serif;margin:20px">
+<h1>Hospital Management — Demo</h1>
+<div style="max-width:700px">
+<section id="auth">
+  <h2>Register</h2>
+  <input id="reg_user" placeholder="username"/><input id="reg_pass" placeholder="password" type="password"/>
+  <button onclick="register()">Register</button>
+  <div id="reg_result"></div>
+  <h2>Login</h2>
+  <input id="login_user" placeholder="username"/><input id="login_pass" placeholder="password" type="password"/>
+  <button onclick="login()">Login</button>
+  <div id="login_result"></div>
+</section>
+<section id="main" style="display:none">
+  <h2>Dashboard</h2>
+  <div>Welcome <span id="me"></span> — <button onclick="logout()">Logout</button></div>
+  <h3>Doctors</h3>
+  <div id="doctors"></div>
+  <h3>Book Appointment</h3>
+  <select id="doctor_select"></select>
+  <input id="appt_time" type="datetime-local"/><button onclick="book()">Book</button>
+  <div id="book_result"></div>
+  <h3>Your Appointments</h3>
+  <div id="my_appts"></div>
+  <h3>Emergency Queue (demo)</h3>
+  <input id="emg_name" placeholder="name"/><input id="emg_pr" placeholder="priority"/>
+  <button onclick="pushEmg()">Push</button>
+  <button onclick="popEmg()">Pop Next</button>
+  <div id="emg_res"></div>
+</section>
+</div>
+<script>
+const API_BASE = 'http://localhost:4000/api';
+function setToken(t){ localStorage.setItem('token', t); }
+function getToken(){ return localStorage.getItem('token'); }
+function register(){ const u=document.getElementById('reg_user').value; const p=document.getElementById('reg_pass').value; fetch(API_BASE+'/auth/register', {method:'POST',headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p})}).then(r=>r.json()).then(d=>document.getElementById('reg_result').innerText=JSON.stringify(d)); }
+function login(){ const u=document.getElementById('login_user').value; const p=document.getElementById('login_pass').value; fetch(API_BASE+'/auth/login', {method:'POST',headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u,password:p})}).then(r=>r.json()).then(d=>{ if(d.token){ setToken(d.token); document.getElementById('login_result').innerText='Logged in'; showMain(d.user); fetchDoctors(); fetchAppointments(); } else document.getElementById('login_result').innerText=JSON.stringify(d); }); }
+function showMain(user){ document.getElementById('auth').style.display='none'; document.getElementById('main').style.display='block'; document.getElementById('me').innerText=user.username; }
+function logout(){ localStorage.removeItem('token'); location.reload(); }
+function fetchDoctors(){ fetch(API_BASE+'/doctors').then(r=>r.json()).then(d=>{ const el=document.getElementById('doctors'); const sel=document.getElementById('doctor_select'); el.innerHTML=''; sel.innerHTML=''; d.doctors.forEach(doc=>{ el.innerHTML += `<div>${doc.name} — ${doc.specialization}</div>`; sel.innerHTML += `<option value="${doc.doctor_id}">${doc.name}</option>`; }); }); }
+function book(){ const did=document.getElementById('doctor_select').value; const time=document.getElementById('appt_time').value; fetch(API_BASE+'/appointments/book',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()}, body: JSON.stringify({doctor_id:did, time})}).then(r=>r.json()).then(d=>{ document.getElementById('book_result').innerText=JSON.stringify(d); fetchAppointments(); }); }
+function fetchAppointments(){ fetch(API_BASE+'/appointments',{headers:{'Authorization':'Bearer '+getToken()}}).then(r=>r.json()).then(d=>{ const el=document.getElementById('my_appts'); el.innerHTML=''; (d.appointments || []).forEach(a=> el.innerHTML += `<div>Appointment ${a.appointment_id} with doctor ${a.doctor_id} at ${a.time} (status ${a.status})</div>`); }); }
+function pushEmg(){ const name=document.getElementById('emg_name').value; const pr=document.getElementById('emg_pr').value; fetch(API_BASE+'/emergency',{method:'POST',headers:{'Content-Type':'application/json'},body: JSON.stringify({priority:parseInt(pr,10), name})}).then(r=>r.json()).then(d=>document.getElementById('emg_res').innerText=JSON.stringify(d)); }
+function popEmg(){ fetch(API_BASE+'/emergency/next').then(r=>r.json()).then(d=>document.getElementById('emg_res').innerText=JSON.stringify(d)); }
+</script>
+</body></html>
